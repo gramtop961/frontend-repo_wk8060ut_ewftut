@@ -1,18 +1,553 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flames App</title>
-    <link rel="icon" type="image/x-icon" href="favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/style.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>VOIDFORGE — Cosmic Cyberpunk Portfolio</title>
+  <meta name="description" content="VOIDFORGE — a deep cosmic cyberpunk portfolio. WebGL black hole, magnetic 3D menu, infinite 3D gallery, liquid typography, vortex transitions, and a collapsing particle singularity." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#05060a;--fg:#d9e5ff;--muted:#96a6d3;--neon:#52f5ff;--magenta:#ff4bd8;--violet:#8a5bff;--acid:#b4ff39;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;background:var(--bg);color:var(--fg);margin:0;font-family:Manrope,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+    body{overflow-x:hidden;}
+
+    /* Custom cursor */
+    .cursor{position:fixed;left:0;top:0;width:28px;height:28px;border:2px solid rgba(149,255,255,.8);border-radius:50%;pointer-events:none;mix-blend-mode:screen;transform:translate(-50%,-50%);z-index:9999;filter:drop-shadow(0 0 8px rgba(82,245,255,.8));}
+    .cursor:after{content:"";position:absolute;inset:7px;border:2px solid rgba(255,75,216,.9);border-radius:50%;filter:blur(.5px);}
+    .cursor.hover{transform:translate(-50%,-50%) scale(1.5);border-color:var(--magenta)}
+
+    /* Global wrappers */
+    .stage{position:relative;}
+    canvas.webgl{position:fixed;inset:0;z-index:0;display:block;}
+    .postfx{position:fixed;inset:0;pointer-events:none;z-index:3;mix-blend-mode:screen}
+    .grain{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:.2;background-image:url('data:image/svg+xml;utf8,\
+      <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">\
+        <filter id="n"><feTurbulence baseFrequency="0.9" numOctaves="2"/></filter>\
+        <rect width="100%" height="100%" filter="url(%23n)" opacity="0.15"/>\
+      </svg>');background-size:160px 160px;mix-blend-mode:screen;}
+
+    /* Sections */
+    section{position:relative;min-height:100svh;padding:8svh clamp(16px,4vw,72px);display:flex;align-items:center;justify-content:center;z-index:1}
+    .hero{isolation:isolate}
+    .hero .content{position:relative;text-align:center;z-index:2}
+    .brand{letter-spacing:.2em;font-weight:800;font-size:clamp(28px,4vw,40px);opacity:.85;text-transform:uppercase;color:var(--muted)}
+    .title{font-weight:800;line-height:.9;letter-spacing:.04em;font-size:clamp(56px,10vw,180px);background:linear-gradient(90deg,var(--neon),var(--magenta),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 18px rgba(138,91,255,.25));}
+    .subtitle{margin-top:16px;color:var(--muted);font-size:clamp(14px,2.2vw,20px)}
+    .cta{margin-top:28px;display:inline-block;padding:14px 22px;border:1px solid rgba(255,255,255,.15);border-radius:999px;color:var(--fg);text-decoration:none;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01));backdrop-filter:blur(6px);}
+
+    .panel{max-width:1200px;width:100%;}
+
+    /* Magnetic menu */
+    .menu-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase}
+
+    /* Gallery */
+    .gallery{height:100svh}
+
+    /* Liquid Typography */
+    .liquid h2{font-size:clamp(44px,10vw,140px);font-weight:800;line-height:.85;text-align:center;margin:0;background:linear-gradient(90deg,#9ff,#fbf,#aaf);-webkit-background-clip:text;background-clip:text;color:transparent;}
+    .liquid .hint{margin-top:12px;color:var(--muted);text-align:center}
+
+    /* Collapse */
+    .collapse .hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase}
+
+    /* HUD overlays */
+    .hud{position:fixed;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:18px 20px;z-index:5;pointer-events:none}
+    .hud .logo{pointer-events:auto;font-weight:800;letter-spacing:.22em;color:var(--muted)}
+
+    /* Responsive helpers */
+    @media (max-width:640px){.subtitle{max-width:80ch}.hud{padding:12px}.cta{padding:12px 16px}}
+  </style>
+</head>
+<body>
+  <!-- Custom cursor + GPU trail canvas injected by JS -->
+  <div class="cursor" id="cursor"></div>
+
+  <div class="hud">
+    <div class="logo">VOIDFORGE</div>
+    <div style="pointer-events:auto;opacity:.75;font-size:12px">Deep Cosmic Cyberpunk</div>
+  </div>
+
+  <!-- Global WebGL Canvas (Three.js) -->
+  <canvas class="webgl" id="webgl"></canvas>
+  <div class="postfx" id="postfx"></div>
+  <div class="grain"></div>
+
+  <main class="stage" data-barba="wrapper">
+    <div data-barba="container" data-barba-namespace="void">
+      <!-- 1) HERO -->
+      <section class="hero" id="hero">
+        <!-- Spline hero object as background layer -->
+        <spline-viewer id="spline" url="https://prod.spline.design/ns1MlpZQDFS29uiL/scene.splinecode" style="position:absolute;inset:0;z-index:1"></spline-viewer>
+        <div class="content">
+          <div class="brand">ENTER THE VOID</div>
+          <div class="title">VOIDFORGE</div>
+          <div class="subtitle">A cosmic portfolio forged in singularity — shader alchemy, neon plasma, and holographic distortion.</div>
+          <a href="#menu" class="cta" data-scrollto>Begin Descent</a>
+          <div class="menu-hint">Scroll</div>
+        </div>
+      </section>
+
+      <!-- 2) MAGNETIC 3D MENU -->
+      <section id="menu">
+        <div class="panel">
+          <div class="brand" style="text-align:center;margin-bottom:20px">Magnetic Menu</div>
+          <div class="subtitle" style="text-align:center">Hover to attract the crystals. Six holographic entries, trailing particles and subtle FM tones.</div>
+        </div>
+      </section>
+
+      <!-- 3) INFINITE SCROLL GALLERY (horizontal) -->
+      <section class="gallery" id="gallery">
+        <div class="panel">
+          <div class="brand" style="text-align:center;margin-bottom:20px">Portfolio Grid</div>
+          <div class="subtitle" style="text-align:center">60 projects — soft-body cards in an isometric field with bloom, glitch, and chroma.</div>
+        </div>
+      </section>
+
+      <!-- 4) LIQUID TYPOGRAPHY -->
+      <section class="liquid" id="liquid">
+        <div class="panel">
+          <h2>I bend reality</h2>
+          <div class="hint">Liquid metal shader typography. Scroll to melt and reform.</div>
+        </div>
+      </section>
+
+      <!-- 5) Tunnel transition is injected via fullscreen shader when crossing waypoints -->
+
+      <!-- 6) FINAL COLLAPSE -->
+      <section class="collapse" id="collapse">
+        <div class="panel" style="text-align:center">
+          <div class="brand">Gravitational Collapse</div>
+          <div class="subtitle">100,000+ particles converge to a singularity. Click to supernova and return to the origin.</div>
+          <div class="hint">Click to Detonate</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script type="module" src="https://unpkg.com/@studio-freight/lenis@1.0.41/dist/lenis.min.js"></script>
+  <script type="module" src="https://unpkg.com/three@0.168.0/build/three.module.js"></script>
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.168.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.168.0/examples/jsm/controls/OrbitControls.js';
+    import { EffectComposer } from 'https://unpkg.com/three@0.168.0/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'https://unpkg.com/three@0.168.0/examples/jsm/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'https://unpkg.com/three@0.168.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+    import { ShaderPass } from 'https://unpkg.com/three@0.168.0/examples/jsm/postprocessing/ShaderPass.js';
+    import { BokehPass } from 'https://unpkg.com/three@0.168.0/examples/jsm/postprocessing/BokehPass.js';
+
+    // Lenis global provided by module import (default export)
+    import Lenis from 'https://unpkg.com/@studio-freight/lenis@1.0.41/dist/lenis.min.js';
+
+    // GSAP plugins
+    const { gsap } = window;
+    gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+    // DOM
+    const canvas = document.getElementById('webgl');
+    const cursorEl = document.getElementById('cursor');
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, alpha:true, powerPreference:'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.autoClear = false;
+
+    // Scene and camera
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x05060a, 0.02);
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 200);
+    camera.position.set(0, 1.2, 5);
+
+    // Controls (disabled, useful for debug)
+    const controls = new OrbitControls(camera, canvas); controls.enabled=false;
+
+    // Lighting
+    const hemi = new THREE.HemisphereLight(0x88bbff, 0x060606, 0.6); scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.3); dir.position.set(5,6,4); scene.add(dir);
+
+    // Postprocessing
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.4, 0.85); composer.addPass(bloom);
+
+    // Chromatic aberration + grain + VHS glitch ShaderPass
+    const aberrationPass = new ShaderPass({
+      uniforms:{ tDiffuse:{value:null}, time:{value:0}, intensity:{value:0}, grain:{value:0.08}, resolution:{value:new THREE.Vector2(window.innerWidth, window.innerHeight)} },
+      vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader:`
+        varying vec2 vUv; uniform sampler2D tDiffuse; uniform float time; uniform float intensity; uniform float grain; uniform vec2 resolution;
+        float hash(vec2 p){ return fract(sin(dot(p, vec2(41.0,289.0)))*45758.5453); }
+        void main(){
+          vec2 uv = vUv;
+          float chroma = intensity * 0.0035;
+          vec2 ruv = uv + vec2(chroma,0.0);
+          vec2 guv = uv;
+          vec2 buv = uv - vec2(chroma,0.0);
+          vec3 col = vec3(texture2D(tDiffuse, ruv).r, texture2D(tDiffuse, guv).g, texture2D(tDiffuse, buv).b);
+          // subtle scanlines
+          float scan = sin((uv.y + time*0.25)*1200.0)*0.02*intensity;
+          col *= 1.0 - scan;
+          // grain
+          float n = hash(uv*resolution + time);
+          col += (n-0.5)*grain;
+          gl_FragColor = vec4(col,1.0);
+        }`
+    });
+    composer.addPass(aberrationPass);
+
+    const dof = new BokehPass(scene, camera, { focus: 3.0, aperture: 0.0002, maxblur: 0.002 });
+    composer.addPass(dof);
+
+    // Depth layers for subtle parallax
+    const layers = [];
+    function addParallaxLayer(z, opacity=0.8){
+      const g = new THREE.PlaneGeometry(20, 10, 1, 1);
+      const m = new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(Math.random(),0.6,0.5), transparent:true, opacity:0.05 });
+      const mesh = new THREE.Mesh(g,m); mesh.position.z = z; mesh.renderOrder=-1; scene.add(mesh); layers.push(mesh);
+    }
+    for(let i=0;i<12;i++) addParallaxLayer(-2 - i*1.2);
+
+    // GPU cursor trail (additive points)
+    const trailCount = 600;
+    const trailGeo = new THREE.BufferGeometry();
+    const trailPos = new Float32Array(trailCount*3);
+    for(let i=0;i<trailCount;i++){ trailPos[i*3]=0; trailPos[i*3+1]=0; trailPos[i*3+2]=0; }
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos,3));
+    const trailMat = new THREE.ShaderMaterial({
+      transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+      uniforms:{ time:{value:0}, color:{value:new THREE.Color(0x66ffff)} },
+      vertexShader:`
+        attribute vec3 position; varying float vA; uniform float time;
+        void main(){
+          float i = float(gl_VertexID);
+          vec3 p = position; vA = 1.0 - (i/600.0);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p,1.0);
+          gl_PointSize = 3.5 * vA;
+        }`,
+      fragmentShader:`varying float vA; uniform vec3 color; void main(){ float d = length(gl_PointCoord-0.5); float a = smoothstep(0.5,0.0,d)*vA; gl_FragColor = vec4(color, a); }`
+    });
+    const trail = new THREE.Points(trailGeo, trailMat); scene.add(trail);
+
+    // Magnetic 3D menu (6 crystals with billboarding + hover trails)
+    const menuGroup = new THREE.Group(); scene.add(menuGroup);
+    const crystalGeom = new THREE.IcosahedronGeometry(0.18, 1);
+    const crystalMat = new THREE.ShaderMaterial({
+      uniforms:{ time:{value:0}, base:{value:new THREE.Color(0x66ccff)}, glow:{value:new THREE.Color(0xff77ff)} },
+      transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+      vertexShader:`uniform float time; varying float vP; void main(){ vP = position.y; vec3 p = position + normal*0.04*sin(time*2.0 + position.y*6.0); gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0); }`,
+      fragmentShader:`uniform vec3 base; uniform vec3 glow; varying float vP; void main(){ float a = 0.8; vec3 col = mix(base,glow,0.5+0.5*sin(vP*8.0)); gl_FragColor = vec4(col, a); }`
+    });
+    const crystals=[]; const crystalTargets=[];
+    for(let i=0;i<6;i++){
+      const m = new THREE.Mesh(crystalGeom, crystalMat);
+      m.position.set(Math.cos(i)*1.2, 0.3+Math.sin(i*1.8)*0.4, -0.2 - i*0.05);
+      m.userData.hover=false; m.userData.vel=new THREE.Vector3();
+      menuGroup.add(m); crystals.push(m); crystalTargets.push(m.position.clone());
+    }
+
+    // Infinite 3D gallery cards
+    const galleryGroup = new THREE.Group(); scene.add(galleryGroup);
+    const cardGeo = new THREE.PlaneGeometry(0.9, 0.6, 32, 32);
+    const cardMat = new THREE.ShaderMaterial({
+      uniforms:{ time:{value:0}, hover:{value:0} },
+      transparent:true,
+      vertexShader:`uniform float time; varying vec2 vUv; void main(){ vUv=uv; vec3 p=position; p.z += 0.03*sin(uv.x*12.0+time*2.0)*sin(uv.y*12.0+time*2.0); gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }`,
+      fragmentShader:`varying vec2 vUv; uniform float time; uniform float hover; void main(){ vec2 uv=vUv; float vign=1.0 - smoothstep(0.7,1.0,length(uv-0.5)); vec3 col = mix(vec3(0.06,0.08,0.12), vec3(0.3,0.1,0.4), uv.x) + 0.1*sin(time+uv.xyx*8.0); col += hover*0.2; gl_FragColor=vec4(col, 0.95); }`
+    });
+    const cards=[]; const CARD_ROWS=5, CARD_COLS=12; // 60 cards
+    for(let y=0;y<CARD_ROWS;y++){
+      for(let x=0;x<CARD_COLS;x++){
+        const mesh=new THREE.Mesh(cardGeo, cardMat.clone());
+        mesh.position.set((x - CARD_COLS*0.5)*1.3, (y - CARD_ROWS*0.5)*0.9, -2.5 - (x%5)*0.02);
+        mesh.userData.hover=0; galleryGroup.add(mesh); cards.push(mesh);
+      }
+    }
+
+    // Liquid Typography: big plane with SDF text via shader
+    const liquidGroup = new THREE.Group(); scene.add(liquidGroup);
+    const liquidGeo = new THREE.PlaneGeometry(6,2.4,1,1);
+    const liquidMat = new THREE.ShaderMaterial({
+      uniforms:{ time:{value:0}, progress:{value:0}, resolution:{value:new THREE.Vector2(2048,1024)} },
+      transparent:true,
+      vertexShader:`varying vec2 vUv; void main(){ vUv=uv; vec3 p=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0); }`,
+      fragmentShader:`
+        varying vec2 vUv; uniform float time; uniform float progress; 
+        // Signed distance to text using a cheap stripes+mask trick (stylized)
+        float sdCircle(vec2 p,float r){return length(p)-r;}
+        float opS(float d1,float d2){return max(-d2,d1);} // subtraction
+        void main(){
+          vec2 uv = vUv*2.0-1.0; // -1..1
+          // Make letters from circles composition that morphs like liquid word shape
+          float d = sdCircle(uv + vec2(0.6,0.0), 0.45);
+          d = opS(d, sdCircle(uv+vec2(0.2,0.0), 0.45));
+          d = opS(d, sdCircle(uv-vec2(0.2,0.0), 0.45));
+          d = opS(d, sdCircle(uv-vec2(0.6,0.0), 0.45));
+          // Liquid edges
+          float w = 0.015 + 0.01*sin(time*2. + uv.x*8.) + 0.02*progress;
+          float alpha = smoothstep(w, 0.0, abs(d));
+          vec3 base = mix(vec3(0.1,0.2,0.35), vec3(0.6,0.2,0.9), 0.5+0.5*uv.x);
+          vec3 edge = vec3(0.7,0.9,1.0);
+          vec3 col = mix(base, edge, alpha);
+          gl_FragColor = vec4(col, alpha);
+        }`
+    });
+    const liquidMesh = new THREE.Mesh(liquidGeo, liquidMat); liquidGroup.add(liquidMesh);
+
+    // Final collapse particles
+    const collapseGroup = new THREE.Group(); scene.add(collapseGroup);
+    const PCOUNT = 120000;
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(PCOUNT*3);
+    for(let i=0;i<PCOUNT;i++){
+      const r=THREE.MathUtils.randFloat(2.0, 12.0), a=Math.random()*Math.PI*2, h=(Math.random()-0.5)*6.0;
+      pPos[i*3]=Math.cos(a)*r; pPos[i*3+1]=h; pPos[i*3+2]=Math.sin(a)*r;
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
+    const pMat = new THREE.ShaderMaterial({
+      transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+      uniforms:{ time:{value:0}, collapse:{value:0} },
+      vertexShader:`
+        uniform float time; uniform float collapse; varying float vA; 
+        void main(){
+          vec3 p = position; float d = length(p);
+          p *= 1.0 - collapse*0.85; p += normalize(-p)*collapse*3.0;
+          vA = smoothstep(12.0, 0.0, d);
+          gl_Position = projectionMatrix*modelViewMatrix*vec4(p,1.0);
+          gl_PointSize = 1.8 + (1.0-vA)*1.2;
+        }`,
+      fragmentShader:`varying float vA; void main(){ float d = length(gl_PointCoord-0.5); float a = smoothstep(0.5,0.0,d)*vA; gl_FragColor = vec4(0.7,1.0,1.0,a); }`
+    });
+    const particles = new THREE.Points(pGeo, pMat); collapseGroup.add(particles);
+
+    // Layout: world positions for each section
+    const anchors = {
+      hero: new THREE.Vector3(0, 0.2, 5.0),
+      menu: new THREE.Vector3(0, 0.6, 3.4),
+      gallery: new THREE.Vector3(6.5, 0.0, 4.4),
+      liquid: new THREE.Vector3(0, 0, 3.2),
+      collapse: new THREE.Vector3(0, 0, 7.5),
+    };
+
+    // Place groups in world to parallax with scroll
+    menuGroup.position.set(0, 0.2, 0.0);
+    galleryGroup.position.set(0, -0.4, -2.0);
+    liquidGroup.position.set(0, 0.2, -0.6);
+    collapseGroup.position.set(0, -0.2, -1.0);
+
+    // Scroll + GSAP timeline master
+    const lenis = new Lenis({ duration:1.2, smoothWheel:true, smoothTouch:true, lerp:0.1 });
+    let scrollVel = 0;
+    let lastScroll = 0;
+    function raf(time){ lenis.raf(time); requestAnimationFrame(raf); }
+    requestAnimationFrame(raf);
+
+    const master = gsap.timeline({ paused:true });
+
+    // Section progress proxies using dummy objects
+    const state = { blackhole:0, menu:0, gallery:0, liquid:0, tunnel:0, collapse:0 };
+
+    // 1) Black hole pulls UI as scrolls out
+    master.to(state, { blackhole:1, duration:1, ease:'power2.inOut' }, 0);
+    // 2) Menu magnetism strength
+    master.to(state, { menu:1, duration:1, ease:'sine.out' }, 0.3);
+    // 3) Gallery horizontal sweep
+    master.to(state, { gallery:1, duration:1, ease:'none' }, 0.6);
+    // 4) Liquid reform
+    master.to(state, { liquid:1, duration:1, ease:'sine.inOut' }, 1.0);
+    // 5) Tunnel burst trigger value
+    master.to(state, { tunnel:1, duration:0.1 }, 1.5);
+    // 6) Collapse
+    master.to(state, { collapse:1, duration:1.2, ease:'power3.in' }, 1.6);
+
+    // Map scroll to master timeline (0..1 across full page height)
+    function syncTimeline(){
+      const max = document.body.scrollHeight - window.innerHeight;
+      const y = window.scrollY;
+      const p = max>0 ? (y/max) : 0;
+      master.progress(p);
+    }
+    window.addEventListener('scroll', syncTimeline, { passive:true });
+
+    // Waypoints: build a tunnel effect overlay when crossing major sections
+    let tunnelActive=false, tunnelT=0;
+
+    // Mouse & parallax
+    const mouse = new THREE.Vector2();
+    const mouse3 = new THREE.Vector3();
+    let lastMouse = new THREE.Vector2();
+    window.addEventListener('pointermove', (e)=>{
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      // cursor
+      cursorEl.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    });
+
+    // Hover states for menu: project mouse into world and toggle nearest crystal
+    function updateMenuHover(){
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(mouse, camera);
+      const hits = ray.intersectObjects(crystals, false);
+      crystals.forEach(c=>c.userData.hover=false);
+      hits.slice(0,1).forEach(h=>{ h.object.userData.hover=true; });
+    }
+
+    // Web Audio FM tone for hover
+    const AudioCtx = window.AudioContext || window.webkitAudioContext; const actx = new AudioCtx();
+    let audioStarted=false; function startAudio(){ if(audioStarted) return; audioStarted=true; const g=actx.createGain(); g.gain.value=0.0; g.connect(actx.destination); window._menuGain=g; }
+    window.addEventListener('pointerdown', ()=>{ actx.resume(); startAudio(); });
+
+    function hoverTone(on){ const g = window._menuGain; if(!g) return; gsap.to(g, { duration:0.2, onUpdate(){ g.gain.value = on? 0.02: 0.0; } }); }
+
+    // Scroll interactions
+    let galleryX = 0;
+
+    // Resize
+    function onResize(){
+      camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      if(aberrationPass && aberrationPass.uniforms && aberrationPass.uniforms.resolution) aberrationPass.uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+    }
+    window.addEventListener('resize', onResize);
+
+    // Fake tunnel overlay control
+    const tunnelMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2,2),
+      new THREE.ShaderMaterial({
+        uniforms:{ time:{value:0}, progress:{value:0} }, transparent:true, depthWrite:false,
+        vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position = vec4(position,1.0); }`,
+        fragmentShader:`varying vec2 vUv; uniform float time; uniform float progress; void main(){ vec2 uv=vUv*2.-1.; float r=length(uv); float swirl = sin(12.0*r - time*8.0); float m = smoothstep(1.2,0.0,r) * progress; vec3 col = mix(vec3(0.0), vec3(0.7,0.2,1.0), m); gl_FragColor = vec4(col, m* (0.8 + 0.2*swirl)); }`
+      })
+    );
+
+    // Scene for fullscreen pass
+    const overlayScene = new THREE.Scene();
+    const overlayCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+    overlayScene.add(tunnelMesh);
+
+    // Scroll → timeline sync via Lenis
+    lenis.on('scroll', ({ scroll, velocity }) => {
+      scrollVel = velocity; syncTimeline();
+    });
+
+    // Click supernova on collapse section
+    document.getElementById('collapse').addEventListener('click', ()=>{
+      gsap.to(pMat.uniforms.collapse, { value:0, duration:0.8, ease:'power3.out' });
+      gsap.to(window, { duration:1.2, scrollTo:0, ease:'power4.inOut' });
+    });
+
+    // Smooth anchor scroll
+    document.querySelectorAll('[data-scrollto]').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        e.preventDefault(); const id = el.getAttribute('href'); const target = document.querySelector(id); if(!target) return;
+        const top = target.getBoundingClientRect().top + window.scrollY; gsap.to(window, { duration:1.2, scrollTo: top, ease:'power3.inOut' });
+      });
+    });
+
+    // Barba for fake page transitions between sections (single page)
+    barba.init({ transitions:[{ name:'voidflux', leave(){ tunnelActive=true; tunnelT=0; }, enter(){ setTimeout(()=>{ tunnelActive=false; }, 1200); } }] });
+
+    // Main animation loop
+    const clock = new THREE.Clock();
+    let mx=0, my=0; // smoothed mouse
+
+    function animate(){
+      const t = clock.getElapsedTime();
+      const dt = clock.getDelta();
+
+      // Smooth mouse
+      mx += (mouse.x - mx) * 0.06; my += (mouse.y - my) * 0.06;
+
+      // Parallax layers
+      layers.forEach((m,i)=>{ m.position.x = mx * (i*0.02); m.position.y = my * (i*0.01); });
+
+      // Trail: shift positions
+      for(let i=trailCount-1;i>0;i--){
+        trailPos[i*3] = trailPos[(i-1)*3];
+        trailPos[i*3+1] = trailPos[(i-1)*3+1];
+        trailPos[i*3+2] = trailPos[(i-1)*3+2];
+      }
+      // project mouse to world near camera
+      mouse3.set(mx, my, 0.5).unproject(camera);
+      trailPos[0]=mouse3.x; trailPos[1]=mouse3.y; trailPos[2]=mouse3.z;
+      trailGeo.attributes.position.needsUpdate = true;
+      trailMat.uniforms.time.value = t;
+
+      // Menu crystals attraction
+      updateMenuHover();
+      crystals.forEach((c,idx)=>{
+        const target = new THREE.Vector3(mx*1.2, my*0.6, c.position.z);
+        const dir = target.clone().sub(c.position).multiplyScalar(0.06 + state.menu*0.1);
+        c.userData.vel.add(dir).multiplyScalar(0.92);
+        c.position.add(c.userData.vel);
+        if(c.userData.hover){ c.scale.set(1.3,1.3,1.3); hoverTone(true); } else { c.scale.set(1,1,1); hoverTone(false); }
+      });
+
+      // Gallery horizontal scroll hijack
+      galleryX = gsap.utils.interpolate(galleryX, state.gallery*1.0, 0.04);
+      galleryGroup.position.x = -galleryX*12.0;
+
+      // Liquid typography progress
+      liquidMat.uniforms.time.value = t; liquidMat.uniforms.progress.value = state.liquid;
+
+      // Collapse particles
+      pMat.uniforms.time.value = t; pMat.uniforms.collapse.value = state.collapse;
+
+      // Blackhole pull effect → intensify postFX based on scroll velocity
+      bloom.strength = 0.6 + Math.abs(scrollVel)*0.08;
+      aberrationPass.uniforms.time.value = t;
+      aberrationPass.uniforms.intensity.value = 0.2 + Math.min(1.5, Math.abs(scrollVel))*0.4;
+
+      // Camera gentle drift and section focus
+      camera.position.x += (mx*0.6 - camera.position.x)*0.04;
+      camera.position.y += (0.6 + my*0.3 - camera.position.y)*0.04;
+      camera.lookAt(0,0,0);
+
+      renderer.clear();
+      composer.render();
+
+      // Tunnel overlay
+      if(tunnelActive){ tunnelT = Math.min(1.0, tunnelT + dt*0.7); tunnelMesh.material.uniforms.time.value = t; tunnelMesh.material.uniforms.progress.value = Math.sin(tunnelT*Math.PI); renderer.render(overlayScene, overlayCam); }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Section enter triggers for tunnel + collapse
+    function waypoint(id, onEnter){
+      ScrollTrigger.create({ trigger:id, start:'top center', onEnter, once:false });
+    }
+    waypoint('#menu', ()=>{ tunnelActive=true; setTimeout(()=>tunnelActive=false, 1400); });
+    waypoint('#gallery', ()=>{ tunnelActive=true; setTimeout(()=>tunnelActive=false, 1400); });
+    waypoint('#liquid', ()=>{ tunnelActive=true; setTimeout(()=>tunnelActive=false, 1400); });
+    waypoint('#collapse', ()=>{ gsap.to(pMat.uniforms.collapse, { value:1, duration:2.2, ease:'power2.in' }); });
+
+    // Cursor hover states
+    document.querySelectorAll('a,.cta,.logo').forEach(el=>{
+      el.addEventListener('mouseenter', ()=> cursorEl.classList.add('hover'));
+      el.addEventListener('mouseleave', ()=> cursorEl.classList.remove('hover'));
+    });
+
+    // Accessibility: reduce motion pref
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if(mq.matches){ lenis.stop(); }
+
+    // Initial sync
+    syncTimeline(); onResize();
+  </script>
+
+  <!-- Spline viewer web component -->
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.52/build/spline-viewer.js"></script>
+</body>
 </html>
